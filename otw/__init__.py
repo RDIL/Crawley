@@ -33,6 +33,10 @@ ourfile = FileManipulator(AbstractFile("crawler-list.txt"))
 logger = logging.getLogger()
 http_ua = open("UserAgent", mode="r").readlines()[0].replace("\n", "")
 
+theobject: dict = [
+    {}
+]
+
 
 def configure_logger():
     console_output = logging.StreamHandler(sys.stdout)
