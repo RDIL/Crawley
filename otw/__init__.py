@@ -34,7 +34,17 @@ logger = logging.getLogger()
 http_ua = open("UserAgent", mode="r").readlines()[0].replace("\n", "")
 
 theobject: dict = [
-    {}
+    {
+        "political": {},
+        "comedy": {},
+        "informational": {},
+        "tech": {},
+        "culture": {},
+        "history": {},
+        "health": {},
+        "science": {},
+        "religion": {}
+    }
 ]
 
 
