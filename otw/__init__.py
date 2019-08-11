@@ -148,16 +148,17 @@ def moved() -> None:
                     logger.warning("Failed to fetch URL. Skipping...")
                     logger.debug(f"Skipping {a_url}.")
                     continue
-                manage_soup(soup=BeautifulSoup(down, 'html.parser'), url=a_url)
+                manage_soup(soup=BeautifulSoup(down, 'html.parser'), rawtext=down, url=a_url)
                 note_url(a_url)
 
 
-def manage_soup(soup: BeautifulSoup, url: str) -> None:
+def manage_soup(soup: BeautifulSoup, rawtext, url: str) -> None:
     assert type(soup) is BeautifulSoup
     for anchor in soup.find_all('a'):
         href = anchor.get('href')
         if href not in to_check and href is not None:
             to_check.append(href)
+    
     to_check.pop(to_check.index(url))
     for i, x in enumerate(to_check):
         if not is_valid_url(to_check[i]):
