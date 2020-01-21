@@ -1,2 +1,3 @@
-# OrganizeTheWeb
-Crawler that sorts the web into different categories
+# Crawly
+
+My attempt at a web crawler.
