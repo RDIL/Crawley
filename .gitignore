@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+crawler-list.txt
+log.txt
+.theia
+
 # C extensions
 *.so
 
