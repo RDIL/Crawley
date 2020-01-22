@@ -4,78 +4,22 @@ You should have received a copy of
 the MIT license with this program/distribution.
 """
 
-import os
-import sys
 import gc
 from bs4 import BeautifulSoup
 from filehandlers import AbstractFile, FileManipulator
-from enum import Enum
-from urllib.error import HTTPError, URLError
-from http.client import IncompleteRead
-import urllib.request
 import logging
-import json
 from typing import Optional
-
-
-class Skipped(Enum):
-    """Reason for skipping the URL."""
-
-    UNICODE = 1  #: Charset mismatch
-    HTTP = 2  #: Failed to connect
-    SSL = 3  #: SSL certificate error
-    PACKET = 4  #: Server sent a malformed or incomplete packet
-    URL = 5  #: Error in URL
-
-
-entrypoint = os.getenv("MANUAL_EXCLUSIONS_FILE")
-if entrypoint is not None:
-    thejson = json.load(open(entrypoint, mode="r"))
+from .logs import configure_logger
+from .httpclient import Skipped, get_url
 
 ourfile = FileManipulator(AbstractFile("crawler-list.txt"))
 logger = logging.getLogger()
-http_ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"  # noqa
-
-
-def configure_logger():
-    console_output = logging.StreamHandler(sys.stdout)
-    file_output = logging.FileHandler(
-        filename="log.txt", encoding="utf-8", mode="w"
-    )
-    for e in [file_output, console_output]:
-        e.setFormatter(
-            logging.Formatter("%(asctime)s : %(levelname)s : %(message)s")
-        )
-        logger.addHandler(e)
-    logger.setLevel(logging.DEBUG)
-    stdout_logger = logging.getLogger("STDOUT")
-    sys.stdout = Streamer(stdout_logger, logging.INFO)
-
-    stderr_logger = logging.getLogger("STDERR")
-    sys.stderr = Streamer(stderr_logger, logging.ERROR)
-
 
 to_check: list = ["http://dmoz-odp.org"]
 
 
-class Streamer(object):
-    """
-    Fake file-like stream object that redirects writes to a logger instance.
-    :author: Ferry Boender <https://www.electricmonk.nl/log/>
-    :license: GPL (https://www.electricmonk.nl/log/posting-license/)
-    """
-
-    def __init__(self, logger, log_level=logging.INFO):
-        self.logger = logger
-        self.log_level = log_level
-
-    def write(self, buf):
-        for line in buf.rstrip().splitlines():
-            self.logger.log(self.log_level, line.rstrip())
-
-
 def is_valid_url(a_url) -> bool:
-    defaults: bool = (
+    return (
         not a_url.startswith("/")
         and not a_url.startswith(".")
         and not a_url.startswith("#")
@@ -100,11 +44,6 @@ def is_valid_url(a_url) -> bool:
         and "kid" not in a_url
         and a_url not in ourfile.get_cache()
     )
-    if entrypoint is not None:
-        for text in thejson["no_scan"]:
-            if text in a_url:
-                return False
-    return defaults
 
 
 def valid_response(down) -> bool:
@@ -155,10 +94,10 @@ def manage_soup(soup: BeautifulSoup, url: Optional[str]) -> None:
         if href not in to_check and href is not None:
             to_check.append(href)
 
-    to_check.pop(to_check.index(url))
+    del to_check[to_check.index(url)]
     for i, x in enumerate(to_check):
         if not is_valid_url(to_check[i]):
-            to_check.pop(i)
+            del to_check[i]
 
 
 def note_url(a_url) -> None:
@@ -167,29 +106,6 @@ def note_url(a_url) -> None:
         ourfile.refresh()
     except UnicodeError as f:
         logger.error(f)
-
-
-def get_url(url):
-    logger.info(f"Making request to {url}.")
-    urllib.request.urlcleanup()
-    try:
-        return urllib.request.urlopen(
-            urllib.request.Request(url, headers={"User-Agent": http_ua})
-        ).read()
-    except HTTPError:
-        return Skipped.HTTP
-    except URLError:
-        return Skipped.SSL
-    except UnicodeError:
-        return Skipped.UNICODE
-    except IncompleteRead:
-        return Skipped.PACKET
-    except ConnectionResetError:
-        return Skipped.HTTP
-    except ConnectionAbortedError:
-        return Skipped.PACKET
-    except ValueError:
-        return Skipped.URL
 
 
 if __name__ == "__main__":
