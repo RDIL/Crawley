@@ -1,2 +1,2 @@
-filehandlers==2.1
-beautifulsoup4==4.7.1
+filehandlers==3.0.0
+beautifulsoup4==4.8.2
