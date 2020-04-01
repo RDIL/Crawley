@@ -102,7 +102,7 @@ def manage_soup(soup: BeautifulSoup, url: Optional[str]) -> None:
 
 def note_url(a_url) -> None:
     try:
-        ourfile.get_file().wrap().write(f"{a_url}\n")
+        ourfile.write_to_file(a_url + "\n")
         ourfile.refresh()
     except UnicodeError as f:
         logger.error(f)
